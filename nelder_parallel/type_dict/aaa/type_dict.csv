@@ -1,0 +1,4 @@
+var_name;type;default;bound;help
+x1;float;10;[-10,10];None
+x2;float;10;[-10,10];None
+loss;float;1.0e+8;[0, 1.0e+8];None

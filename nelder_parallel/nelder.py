@@ -3,9 +3,10 @@ import numpy as np
 import random
 import copy
 import os
+from argparse import ArgumentParser as ArgPar
 
-def renew_simplex(xs, ys, var_names):
-    with open("simplex/simplex.csv", "w", newline = "") as f:
+def renew_simplex(xs, ys, var_names, model):
+    with open("simplex/{}/simplex.csv".format(model), "w", newline = "") as f:
         writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
         writer.writeheader()
 
@@ -17,22 +18,16 @@ def renew_simplex(xs, ys, var_names):
             writer.writerow(save_row)
 
 
-def renew_operations(ops, num = 0):
-    with open("operation/{}/operations.csv".format(num), "a", newline = "") as f:
+def renew_operations(ops, model, num = 0):
+    with open("operation/{}/{}/operations.csv".format(model, num), "a", newline = "") as f:
         writer = csv.writer(f, delimiter = ",", quotechar = '"')
 
         for op in ops:
             writer.writerow([op])
 
-def load_operations(num = 0):
-    if not os.path.isdir("operation/{}".format(num)):
-        os.mkdir("operation/{}".format(num))
+def load_operations(model, num = 0):
     
-    if not os.path.isfile("operation/{}/operations.csv".format(num)):
-        with open("operation/{}/operations.csv".format(num), "w") as f:
-            pass
-
-    with open("operation/{}/operations.csv".format(num), "r", newline = "") as f:
+    with open("operation/{}/{}/operations.csv".format(model, num), "r", newline = "") as f:
         reader = csv.reader(f, delimiter = ",", quotechar = '"')
         
         ops = []
@@ -42,8 +37,8 @@ def load_operations(num = 0):
 
         return ops
 
-def load_storage():
-    with open("storage/storage.csv", "r", newline = "") as f:
+def load_storage(model):
+    with open("storage/{}/storage.csv".format(model), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ",", quotechar = '"')
         cnt = 0
 
@@ -53,8 +48,8 @@ def load_storage():
         return cnt
 
 
-def renew_storage(storage, var_names):
-    with open("storage/storage.csv", "w", newline = "") as f:
+def renew_storage(storage, var_names, model):
+    with open("storage/{}/storage.csv".format(model), "w", newline = "") as f:
         writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
         writer.writeheader()
 
@@ -73,12 +68,9 @@ def renew_storage(storage, var_names):
             writer.writerow(save_row)
         print("")
 
-def load_simplex(var_names, type_dict):
-    if not os.path.isfile("simplex/simplex.csv"):
-        with open("simplex/simplex.csv", "w") as f:
-            pass
-
-    with open("simplex/simplex.csv", "r", newline = "") as f:
+def load_simplex(var_names, type_dict, model):
+    
+    with open("simplex/{}/simplex.csv".format(model), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ",", quotechar = '"')
         
         n_vars = len(var_names[:-1])
@@ -94,8 +86,8 @@ def load_simplex(var_names, type_dict):
         
         return xs, ys
 
-def load_var_features():
-    with open("type_dict/type_dict.csv", "r", newline = "") as f:
+def load_var_features(model):
+    with open("type_dict/{}/type_dict.csv".format(model), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ";", quotechar = '"')
         
         var_names, type_dict, bounds = [],[],[]
@@ -107,16 +99,13 @@ def load_var_features():
 
         return var_names, type_dict, bounds
 
-def load_evaluation(var_names, type_dict, num = 0):
-    if not os.path.isdir("evaluation/{}".format(num)):
-        os.mkdir("evaluation/{}".format(num))
-    
-    if not os.path.isfile("evaluation/{}/evaluation.csv".format(num)):
-        with open("evaluation/{}/evaluation.csv".format(num), "w") as f:
+def load_evaluation(var_names, type_dict, model, num = 0):   
+    if not os.path.isfile("evaluation/{}/{}/evaluation.csv".format(model, num)):
+        with open("evaluation/{}/{}/evaluation.csv".format(model, num), "w") as f:
             writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
             writer.writeheader()
 
-    with open("evaluation/{}/evaluation.csv".format(num), "r", newline = "") as f:
+    with open("evaluation/{}/{}/evaluation.csv".format(model, num), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ",", quotechar = '"')
         prior_xs = []
         prior_ys = []
@@ -143,15 +132,17 @@ def latin_hypercube_sampling(bounds, n_points):
 
 class nelder():
     
-    def __init__(self):
-        self.num = 0
+    def __init__(self, model, num = 0, is_round = True):
+        self.num = num
+        self.model = model
+        self.is_round = is_round
 
-        self.var_names, self.type_dict, self.bounds = load_var_features()
-        self.xs, self.ys = load_simplex(self.var_names, self.type_dict)
-        self.prior_xs, self.prior_ys = load_evaluation(self.var_names, self.type_dict, num = self.num)
+        self.var_names, self.type_dict, self.bounds = load_var_features(self.model)
+        self.xs, self.ys = load_simplex(self.var_names, self.type_dict, self.model)
+        self.prior_xs, self.prior_ys = load_evaluation(self.var_names, self.type_dict, self.model, num = self.num)
 
         self.n_points = len(self.xs)
-        self.operations = load_operations(num = self.num)
+        self.operations = load_operations(self.model, num = self.num)
         self.storage = []
         self.initilize = False
 
@@ -187,17 +178,20 @@ class nelder():
         self.centroid()
         xr = self.c + self.coef["r"] * (self.c - self.xs[-1])
         
-        for i, (xi, bound) in enumerate(zip(xr, self.bounds)):
-            xr[i] = np.clip(xi, bound[0], bound[1])
+        if self.is_round:
+            for i, (xi, bound) in enumerate(zip(xr, self.bounds)):
+                xr[i] = np.clip(xi, bound[0], bound[1])
         
+
         return xr
         
     def expand(self):
         self.centroid()
         xe = self.c + self.coef["e"] * (self.c - self.xs[-1])
         
-        for i, (xi, bound) in enumerate(zip(xe, self.bounds)):
-            xe[i] = np.clip(xi, bound[0], bound[1])
+        if self.is_round:
+            for i, (xi, bound) in enumerate(zip(xe, self.bounds)):
+                xe[i] = np.clip(xi, bound[0], bound[1])
         
         return xe
 
@@ -205,8 +199,9 @@ class nelder():
         self.centroid()
         xoc = self.c + self.coef["oc"] * (self.c - self.xs[-1])
 
-        for i, (xi, bound) in enumerate(zip(xoc, self.bounds)):
-            xoc[i] = np.clip(xi, bound[0], bound[1])
+        if self.is_round:
+            for i, (xi, bound) in enumerate(zip(xoc, self.bounds)):
+                xoc[i] = np.clip(xi, bound[0], bound[1])
         
         return xoc
 
@@ -331,21 +326,47 @@ class nelder():
                 self.storage = [xrr[:]]
                 next_ops.append("r")
 
-        renew_storage(self.storage, self.var_names[:-1])
-        renew_simplex(self.xs, self.ys, self.var_names)
-        renew_operations(next_ops, num = self.num)
+        renew_storage(self.storage, self.var_names[:-1], self.model)
+        renew_simplex(self.xs, self.ys, self.var_names, self.model)
+        renew_operations(next_ops, self.model, num = self.num)
 
 if __name__ == "__main__":
-    if not os.path.isfile("storage/storage.csv"):
-        with open("storage/storage.csv", "w", newline = "") as f:
-            pass
-    if not os.path.isfile("simplex/simplex.csv"):
-        with open("simplex/simplex.csv", "w", newline = "") as f:
-            pass
+    argp = ArgPar()
+    argp.add_argument("-model", type = str)
+    argp.add_argument("-num", type = int)
+    argp.add_argument("-round", type = int, default = 1, choices = [0, 1])
+    args = argp.parse_args()
     
-    if load_storage() == 0:
+    model = args.model
+    num = args.num
+    is_round = bool(args.round)
+
+
+    if not os.path.isdir("storage/{}".format(model)):
+        os.mkdir("storage/{}".format(model))
+    if not os.path.isfile("storage/{}/storage.csv".format(model)):
+        with open("storage/{}/storage.csv".format(model), "w", newline = "") as f:
+            pass
+    if not os.path.isdir("simplex/{}".format(model)):
+        os.mkdir("simplex/{}".format(model))
+    if not os.path.isfile("simplex/{}/simplex.csv".format(model)):
+        with open("simplex/{}/simplex.csv".format(model), "w", newline = "") as f:
+            pass
+    if not os.path.isdir("operation/{}".format(model)):
+        os.mkdir("operation/{}".format(model))
+    if not os.path.isdir("operation/{}/{}".format(model, num)):
+        os.mkdir("operation/{}/{}".format(model, num))
+    if not os.path.isfile("operation/{}/{}/operations.csv".format(model, num)):
+        with open("operation/{}/{}/operations.csv".format(model, num), "w", newline = "") as f:
+            pass    
+    if not os.path.isdir("evaluation/{}".format(model)):
+        os.mkdir("evaluation/{}".format(model))
+    if not os.path.isdir("evaluation/{}/{}".format(model, num)):
+        os.mkdir("evaluation/{}/{}".format(model, num))
+
+    if load_storage(model) == 0:
         print("Will get the positions by Nelder-Mead Method.")
-        nelder()
+        nelder(model, num = num, is_round = is_round)
     else:
         print("Will collect a position from the storage.")
         print("")
