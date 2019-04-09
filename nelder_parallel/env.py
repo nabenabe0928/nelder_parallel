@@ -1,4 +1,5 @@
 import csv
+import math
 from argparse import ArgumentParser as ArgPar
 
 def load_storage(model, num, is_round):
@@ -14,6 +15,7 @@ def load_storage(model, num, is_round):
             if i == 0:
                 for var_name, value in row.items():
                     target[var_name] = value
+                    
             else:
                 no_storage = False
                 post_storage.append({})
@@ -49,18 +51,10 @@ def generate_shell(target, model, num, is_round):
     first_script = ""
     second_script = ""
 
-    for name in target.keys():
-        print("    {}\t".format(name), end = "")
-    print("")
-    for value in target.values():
-        print("  {:.2f}\t".format(float(value)), end = "")    
-    print("")
-    print("")
-
     for s in scripts:
         first_script += s + enter
     
-    second_script = "python train.py -model {} -num {} -round {} ".format(model, num, int(is_round))
+    second_script = "CUDA_VISIBLE_DEVICES=1 python train.py -model {} -num {} -round {} ".format(model, num, int(is_round))
     
     for var_name, value in target.items():
         second_script += "-{} {} ".format(var_name, value)

@@ -1,6 +1,7 @@
 from argparse import ArgumentParser as ArgPar
 import subprocess as sp
 import sys
+import math
 
 if __name__ == "__main__":
     try:
@@ -15,14 +16,18 @@ if __name__ == "__main__":
         num = args.num
         itr = args.itr
         round = bool(args.round)
+        
+        # to know whether you put at least -model and -num
+        sys.argv[5]
 
     except:
         print("SET the variables shown as below:")
-        print("model: which model you run")
-        print("  num: how many times this experiment is")
-        print("  itr: how many times evaluating the model")
+        print("model: which model you run: [WideResNet]")
+        print("  num: how many times this experiment is: [0, 1, 2, ...]")
+        print("  itr: how many times evaluating the model: [any integer]")
         print("round: whether you round up the hyperparameter when one of them is out of boundaries.")
-        print("       True: Round up and Evaluate, False: Not Round up and Record -inf as output.")
+        print("       1: Round up and Evaluate")
+        print("       0: Not Round up and Record -inf as output.")
         sys.exit()
     
     sh_lines = \
@@ -38,6 +43,8 @@ if __name__ == "__main__":
         "echo $USER:~$CWD$ rm operation/{}/{}/operations.csv".format(model, num), \
         "rm evaluation/{}/{}/evaluation.csv".format(model, num), \
         "echo $USER:~$CWD$ rm evaluation/{}/{}/evaluation.csv".format(model, num), \
+        "rm log/{}/{}/*.csv".format(model, num), \
+        "echo $USER:~$CWD$ rm log/{}/{}/*.csv".format(model,num), \
         "\n", \
         "for i in `seq 0 {}`".format(itr), \
         "do", \

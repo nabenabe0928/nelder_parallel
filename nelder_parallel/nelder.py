@@ -2,6 +2,7 @@ import csv
 import numpy as np
 import random
 import copy
+import math
 import os
 from argparse import ArgumentParser as ArgPar
 
@@ -48,6 +49,22 @@ def load_storage(model):
         return cnt
 
 
+def print_result(values):
+    f1 = "  {"
+    f2 = "}  "
+    f_int = "{}:<13"
+    f_float = "{}:<13.3f"
+
+    f_vars = ""
+    
+    for i, v in enumerate(values):
+        if type(v) == float:
+            f_vars += f1 + f_float.format(i) + f2
+        else:
+            f_vars += f1 + f_int.format(i) + f2
+    
+    print(f_vars.format(*values))
+
 def renew_storage(storage, var_names, model):
     with open("storage/{}/storage.csv".format(model), "w", newline = "") as f:
         writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
@@ -56,15 +73,13 @@ def renew_storage(storage, var_names, model):
         save_row = {}
 
         print("Saving the position data as shown below...")
-        for var_name in var_names:
-            print("    {}\t".format(var_name), end = "")
-        print("")
+        print_result(var_names)
         
         for x in storage:
+            print_result(x[:-1])
             for var_name, value in zip(var_names, x):
-                print("  {:.2f}\t".format(value), end = "")
                 save_row[var_name] = value
-            print("")
+            
             writer.writerow(save_row)
         print("")
 
@@ -119,15 +134,13 @@ def load_evaluation(var_names, type_dict, model, num = 0):
     return np.array(prior_xs), np.array(prior_ys)
 
 
-def latin_hypercube_sampling(bounds, n_points):
+def latin_hypercube_sampling(bounds, n_points, type_dict):
     n_dim = len(bounds)
     rnd_grid = np.array([np.random.permutation(list(range(1, n_points + 1))) for _ in range(n_dim)])
-    xs = np.array([
-        [
-        bi[0] + (rnd_grid[i][s] - random.random()) * (bi[1] - bi[0]) / n_points for i, bi in enumerate(bounds)
-        ] for s in range(n_points)
-        ])
-
+    
+    xs = [[bi[0] + (rnd_grid[i][s] - random.random()) * (bi[1] - bi[0]) / n_points for i, bi in enumerate(bounds)
+        ] for s in range(n_points)]
+    
     return xs
 
 class nelder():
@@ -141,13 +154,14 @@ class nelder():
         self.xs, self.ys = load_simplex(self.var_names, self.type_dict, self.model)
         self.prior_xs, self.prior_ys = load_evaluation(self.var_names, self.type_dict, self.model, num = self.num)
 
-        self.n_points = len(self.xs)
+
+        self.n_points = self.get_dim()
         self.operations = load_operations(self.model, num = self.num)
         self.storage = []
         self.initilize = False
 
         if None in self.xs[-1]:
-            self.xs = latin_hypercube_sampling(self.bounds, self.n_points)
+            self.xs = latin_hypercube_sampling(self.bounds, self.n_points, self.type_dict)
             self.ys = np.array([1.0e+08 for _ in range(self.n_points)])
             self.initilize = True
                     
@@ -161,6 +175,15 @@ class nelder():
 
         self.main(last_op)
 
+    def get_dim(self):
+        n_dim = 1
+        
+        for bound in self.bounds[:-1]:
+            if not bound[0] == bound[1]:
+                n_dim += 1
+                print(bound)
+        
+        return n_dim
 
     def order_by(self):
         order = np.argsort(self.ys)
@@ -188,7 +211,7 @@ class nelder():
     def expand(self):
         self.centroid()
         xe = self.c + self.coef["e"] * (self.c - self.xs[-1])
-        
+
         if self.is_round:
             for i, (xi, bound) in enumerate(zip(xe, self.bounds)):
                 xe[i] = np.clip(xi, bound[0], bound[1])
@@ -208,14 +231,14 @@ class nelder():
     def inside_contract(self):
         self.centroid()
         xic = self.c + self.coef["ic"] * (self.c - self.xs[-1])
+        
         return xic
 
     def shrink(self):
         self.centroid()
         for i in range(1, self.n_points):
             self.xs[i] = self.xs[0] + self.coef["s"] * (self.xs[i] - self.xs[0])
-            
-            
+                        
     def main(self, last_ops):
         next_ops = []
 
@@ -326,8 +349,11 @@ class nelder():
                 self.storage = [xrr[:]]
                 next_ops.append("r")
 
-        renew_storage(self.storage, self.var_names[:-1], self.model)
-        renew_simplex(self.xs, self.ys, self.var_names, self.model)
+        storage = [[t(s) for s, t in zip(st, self.type_dict)] for st in self.storage]
+        xs = [[t(xi) for xi, t in zip(x, self.type_dict)] for x in self.xs]
+
+        renew_storage(storage, self.var_names[:-1], self.model)
+        renew_simplex(xs, self.ys, self.var_names, self.model)
         renew_operations(next_ops, self.model, num = self.num)
 
 if __name__ == "__main__":
