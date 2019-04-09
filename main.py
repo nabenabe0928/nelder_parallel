@@ -2,6 +2,7 @@ from argparse import ArgumentParser as ArgPar
 import subprocess as sp
 import sys
 import math
+import os
 
 if __name__ == "__main__":
     try:
@@ -30,6 +31,9 @@ if __name__ == "__main__":
         print("       0: Not Round up and Record -inf as output.")
         sys.exit()
     
+    if not os.path.isdir("exec_screen/{}".format(model)):
+        os.mkdir("exec_screen/{}".format(model))
+
     sh_lines = \
         ["#!/usr/bin/bash", \
         "USER=$(whoami)", \
@@ -67,4 +71,9 @@ if __name__ == "__main__":
     with open("main.sh", "w") as f:
         f.writelines(script)
     
-    sp.call("sh main.sh", shell = True)
+    try:
+        sp.call("rm exec_screen/{}/exec{}.log".format(model, num), shell = True)
+    except:
+        print("no such file exec_screen/{}/exec{}.log".format(model, num))
+
+    sp.call("sh main.sh > exec_screen/{}/exec{}.log".format(model, num), shell = True)
