@@ -2,48 +2,17 @@ import csv
 import math
 from argparse import ArgumentParser as ArgPar
 
-def load_storage(model, num, is_round):
-    with open("storage/{}/storage.csv".format(model), "r", newline = "") as f:
+def load_storage(model, num, is_round, cuda):
+    with open("storage/{}/{}/storage.csv".format(model, num), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ",", quotechar = '"')
-        var_names = reader.fieldnames
-
         target = {}
-        post_storage = []
-        no_storage = True
-
+        
         for i, row in enumerate(reader):
             if i == 0:
                 for var_name, value in row.items():
                     target[var_name] = value
-                    
-            else:
-                no_storage = False
-                post_storage.append({})
-                for var_name, value in row.items():
-                    post_storage[-1][var_name] = value
     
-    if no_storage:
-        with open("storage/{}/storage.csv".format(model), "w", newline = "") as f:
-            writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
-            writer.writeheader()
-    else:
-        renew_storage(post_storage, model)
-    
-    generate_shell(target, model, num, is_round)
-        
-def renew_storage(post_storage, model):
-    var_names = [var_name for var_name in post_storage[0].keys()]
-
-    with open("storage/{}/storage.csv".format(model), "w", newline = "") as f:
-        writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
-        writer.writeheader()
-
-        save_row = {}
-
-        for x in post_storage:
-            for var_name, value in x.items():
-                save_row[var_name] = value
-            writer.writerow(save_row)
+    generate_shell(target, model, num, is_round, cuda)
 
 def load_dist(model):
     with open("type_dict/{}/type_dict.csv".format(model), "r", newline = "") as f:
@@ -66,7 +35,7 @@ def convert_value_by_dist(value, dist):
 
     return v
 
-def generate_shell(target, model, num, is_round):
+def generate_shell(target, model, num, is_round, cuda):
     scripts = ["#!/usr/bin/bash","USER=$(whoami)","CWD=dirname $0", ]
     enter = "\n"
     first_script = ""
@@ -75,7 +44,7 @@ def generate_shell(target, model, num, is_round):
     for s in scripts:
         first_script += s + enter
     
-    second_script = "CUDA_VISIBLE_DEVICES=1 python train.py -model {} -num {} -round {} ".format(model, num, int(is_round))
+    second_script = "CUDA_VISIBLE_DEVICES={} python train.py -model {} -num {} -round {} ".format(cuda, model, num, int(is_round))
     
     var_dist = load_dist(model)
 
@@ -89,19 +58,21 @@ def generate_shell(target, model, num, is_round):
     with open("run.sh", "w") as f:
         f.writelines(script)
 
-def main(model, num, is_round):
-    load_storage(model, num, is_round)
+def main(model, num, is_round, cuda):
+    load_storage(model, num, is_round, cuda)
 
 if __name__ == "__main__":
     argp = ArgPar()
     argp.add_argument("-model", type = str)
     argp.add_argument("-num", type = int)
     argp.add_argument("-round", type = int, default = 1, choices = [0, 1])
+    argp.add_argument("-cuda", type = int, default = 1, required = True)
     args = argp.parse_args()
     
     model = args.model
     num = args.num
     is_round = bool(args.round)
+    cuda = args.cuda
 
     print("Collecting Environment Variables and Putting in Shell Scripts.")
-    main(model, num, is_round)
+    main(model, num, is_round, cuda)

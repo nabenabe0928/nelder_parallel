@@ -16,9 +16,46 @@ from tqdm import tqdm
 from model.WideResNet import WideResNet
 from model.CNN import CNN
 
-##### ToDo
-##### add dists dict to the instance and when failing to evaluate the hp
-##### push same position to the storage.
+def renew_storage(model, num, is_round):
+    with open("storage/{}/{}/storage.csv".format(model, num), "r", newline = "") as f:
+        reader = csv.DictReader(f, delimiter = ",", quotechar = '"')
+        var_names = reader.fieldnames
+
+        target = {}
+        post_storage = []
+        no_storage = True
+
+        for i, row in enumerate(reader):
+            if i == 0:
+                for var_name, value in row.items():
+                    target[var_name] = value
+                    
+            else:
+                no_storage = False
+                post_storage.append({})
+                for var_name, value in row.items():
+                    post_storage[-1][var_name] = value
+    
+    if no_storage:
+        with open("storage/{}/{}/storage.csv".format(model, num), "w", newline = "") as f:
+            writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
+            writer.writeheader()
+    else:
+        del_storage(post_storage, model, num)
+            
+def del_storage(post_storage, model, num):
+    var_names = [var_name for var_name in post_storage[0].keys()]
+
+    with open("storage/{}/{}/storage.csv".format(model, num), "w", newline = "") as f:
+        writer = csv.DictWriter(f, fieldnames = var_names, delimiter = ",", quotechar = '"')
+        writer.writeheader()
+
+        save_row = {}
+
+        for x in post_storage:
+            for var_name, value in x.items():
+                save_row[var_name] = value
+            writer.writerow(save_row)
 
 def load_var_features(model, is_round = True):
     with open("type_dict/{}/type_dict.csv".format(model), "r", newline = "") as f:
@@ -45,9 +82,9 @@ def convert_value_by_dist(value, dist):
         v = value
     return v
 
-def renew_storage(hp_dict, dists, model):
+def re_storage(hp_dict, dists, model, num):
     
-    with open("storage/{}/storage.csv".format(model), "a", newline = "") as f:
+    with open("storage/{}/{}/storage.csv".format(model, num), "a", newline = "") as f:
         writer = csv.DictWriter(f, fieldnames = hp_dict.keys(), delimiter = ",", quotechar = '"')
 
         save_row = {var_name: convert_value_by_dist(x, dist) for (var_name, x), dist in zip(hp_dict.items(), dists)}
@@ -113,7 +150,7 @@ def print_result(values):
     f1 = "  {"
     f2 = "}  "
     f_int = "{}:<20"
-    f_float = "{}:<20.3f"
+    f_float = "{}:<20.5f"
 
     f_vars = ""
     
@@ -126,6 +163,7 @@ def print_result(values):
     print(f_vars.format(*values))
             
 def train(learner, model_name, num):
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     train_data, test_data = get_data(learner.batch_size)
@@ -212,7 +250,8 @@ class function():
     def __init__(self, model, num = 0, is_round = True):
         self.num = num
         self.model = model
-        self.var_names, HyperParameters, self.out_of_bound, self.dists = load_var_features(self.model, is_round = is_round)
+        self.is_round = is_round
+        self.var_names, HyperParameters, self.out_of_bound, self.dists = load_var_features(self.model, is_round = self.is_round)
         self.hp_dict = HyperParameters
 
         hp_tuple = namedtuple("_hyperparameters", (var_name for var_name in self.var_names[:-1]))
@@ -220,10 +259,11 @@ class function():
         
         try:
             self.f()
-        except:
-            print("FAILED to EVALUATE THE HYPERPARAMETERS")
+        except Exception as exc:
+            print("FAILED to EVALUATE THE HYPERPARAMETERS, BECAUSE OF ERROR BELOW")
+            print(exc)
             print("TRY to EVALUATE AGAIN")
-            renew_storage(self.hp_dict, self.dists, model)
+            re_storage(self.hp_dict, self.dists, model, num)
 
     def f(self):
         if not self.out_of_bound:
@@ -238,6 +278,7 @@ class function():
             print("")
 
         renew_evaluation(self.var_names[-1], self.hp_dict, loss, self.model, num = self.num)
+        renew_storage(self.model, self.num, self.is_round)
 
 if __name__ == "__main__":
     argp = ArgPar()
