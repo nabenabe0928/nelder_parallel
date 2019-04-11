@@ -12,5 +12,5 @@ n_blocks3;int;4;[4,4];uniform
 drop_rates1;float;0.2;[0,0.5];uniform
 drop_rates2;float;0.2;[0,0.5];uniform
 drop_rates3;float;0.2;[0,0.5];uniform
-lr_decay;float;0.5;[1.0e-2,1.0];log10
+lr_decay;float;0.2;[1.0e-2,1.0];log10
 loss;float;1.0e+8;[0,1.0e+8];uniform
