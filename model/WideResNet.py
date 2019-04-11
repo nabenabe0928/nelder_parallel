@@ -38,23 +38,21 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.in_is_out = (in_ch == out_ch)
         self.drop_rate = drop_rate
-        self.shortcut = self.in_is_out and None or nn.Conv2d(in_ch, out_ch, 1, padding = 0, stride = stride, bias = False)
-        self.bn1 = nn.BatchNorm2d(in_ch)
-        self.c1 = nn.Conv2d(in_ch, out_ch, kernel_size, padding = 1, stride = stride, bias = False)
+        
+        self.shortcut = nn.Sequential() if self.in_is_out else nn.Conv2d(in_ch, out_ch, 1, padding = 0, stride = stride, bias = True)
+        self.bn1 = nn.BatchNorm2d(in_ch)        
+        self.c1 = nn.Conv2d(in_ch, out_ch, kernel_size, stride = stride, padding = 1, bias = True)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.c2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding = 1, bias = False)
+        self.c2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding = 1, bias = True)
 
     def forward(self, x):
-        h0 = F.relu(self.bn1(x))
-        h = self.c1(h0)
+        h = F.relu(self.bn1(x))
+        h = self.c1(h)
         h = F.dropout2d(h, p = self.drop_rate)
         h = F.relu(self.bn2(h))
         h = self.c2(h)
 
-        if self.in_is_out:
-            return h + x
-        else:
-            return h + self.shortcut(h0)
+        return h + self.shortcut(x)
 
 class WideResNet(nn.Module):
     def __init__(self, hp_parser):
@@ -62,7 +60,6 @@ class WideResNet(nn.Module):
         
         self.hyperparameters = get_hyperparameters(hp_parser)
 
-        # will add the way to convert later
         self.batch_size = self.hyperparameters.batch_size
         self.weight_decay = self.hyperparameters.weight_decay
         self.lr = self.hyperparameters.lr
@@ -75,10 +72,10 @@ class WideResNet(nn.Module):
         lr_step = [0.3, 0.6, 0.8]
         self.lr_step = [int(self.epochs * ls) for ls in lr_step]
         
-        self.c1 = nn.Conv2d(3, self.in_chs[0], 3, padding = 1, bias = False)
-        self.c2 = self._add_groups(self.n_blocks[0], self.in_chs[0], self.in_chs[1], self.hyperparameters.drop_rates1)
-        self.c3 = self._add_groups(self.n_blocks[1], self.in_chs[1], self.in_chs[2], self.hyperparameters.drop_rates2, stride = 2)
-        self.c4 = self._add_groups(self.n_blocks[2], self.in_chs[2], self.in_chs[3], self.hyperparameters.drop_rates3, stride = 2)
+        self.conv1 = nn.Conv2d(3, self.in_chs[0], 3, padding = 1, bias = True)
+        self.conv2 = self._add_groups(self.n_blocks[0], self.in_chs[0], self.in_chs[1], self.hyperparameters.drop_rates1)
+        self.conv3 = self._add_groups(self.n_blocks[1], self.in_chs[1], self.in_chs[2], self.hyperparameters.drop_rates2, stride = 2)
+        self.conv4 = self._add_groups(self.n_blocks[2], self.in_chs[2], self.in_chs[3], self.hyperparameters.drop_rates3, stride = 2)
         self.bn = nn.BatchNorm2d(self.in_chs[3])
         self.full_conn = nn.Linear(self.in_chs[3], 100)
 
@@ -86,6 +83,7 @@ class WideResNet(nn.Module):
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.bias.data.zero_()
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -93,12 +91,12 @@ class WideResNet(nn.Module):
                 m.bias.data.zero_()
 
     def forward(self, x):
-        h = self.c1(x)
-        h = self.c2(h)
-        h = self.c3(h)
-        h = self.c4(h)
-        h = F.avg_pool2d(h, 8)
+        h = self.conv1(x)
+        h = self.conv2(h)
+        h = self.conv3(h)
+        h = self.conv4(h)
         h = F.relu(self.bn(h))
+        h = F.avg_pool2d(h, 8)
         h = h.view(-1, self.in_chs[3])
         h = self.full_conn(h)
         
