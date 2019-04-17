@@ -1,5 +1,6 @@
 import csv
 import math
+import subprocess as sp
 from argparse import ArgumentParser as ArgPar
 
 def load_storage(model, num, is_round, cuda):
@@ -36,7 +37,7 @@ def convert_value_by_dist(value, dist):
     return v
 
 def generate_shell(target, model, num, is_round, cuda):
-    scripts = ["#!/usr/bin/bash","USER=$(whoami)","CWD=dirname $0", ]
+    scripts = ["#!/bin/bash","USER=$(whoami)","CWD=$(dirname $0)", ]
     enter = "\n"
     first_script = ""
     second_script = ""
@@ -57,6 +58,8 @@ def generate_shell(target, model, num, is_round, cuda):
 
     with open("run.sh", "w") as f:
         f.writelines(script)
+    sp.call("ls", shell = True)
+    sp.call("chmod +x run.sh", shell = True)
 
 def main(model, num, is_round, cuda):
     load_storage(model, num, is_round, cuda)

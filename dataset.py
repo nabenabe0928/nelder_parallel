@@ -4,6 +4,8 @@ from torchvision import datasets
 from torchvision import transforms
 import numpy as np
 
+# https://github.com/meliketoy/wide-resnet.pytorch/blob/master/main.py
+
 def get_data(batch_size):
 
     normalize = transforms.Normalize(mean=[0.5071, 0.4867, 0.4408],

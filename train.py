@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import datetime
-from torch.autograd import Variable
 from dataset import get_data
 from tqdm import tqdm
 from model.WideResNet import WideResNet
@@ -125,9 +124,10 @@ def renew_evaluation(y_name, hp, y, model, num = 0):
         writer.writerow(hp)
 
 def accuracy(y, target):
-        pred = y.data.max(1, keepdim = True)[1]
-        acc = pred.eq(target.data.view_as(pred)).cpu().sum()
-        return acc
+    pred = y.data.max(1, keepdim = True)[1]
+    acc = pred.eq(target.data.view_as(pred)).cpu().sum()
+
+    return acc
 
 def record_log(rsl, model, num):
     if not os.path.isdir("log"):
@@ -137,7 +137,7 @@ def record_log(rsl, model, num):
     if not os.path.isdir("log/{}/{}".format(model, num)):
         os.mkdir("log/{}/{}".format(model, num))
     
-    n_evals = len( os.listdir(os.getcwd() + "/log/{}/{}".format(model, num) ) )
+    n_evals = len( os.listdir(os.getcwd() + "/log/{}/{}".format(model, num) ) ) - 1
 
     with open("log/{}/{}/eval{}.csv".format(model, num, n_evals + 1), "w", newline = "") as f:
         writer = csv.DictWriter(f, fieldnames = rsl[0].keys(), delimiter = "\t", quotechar = "'")
@@ -199,7 +199,7 @@ def train(learner, model_name, num):
 
         for data, target in train_data:
             data, target =  data.to(device), target.to(device) 
-            y = learner(data)
+            y = learner(data)            
             loss = loss_func(y, target)
             optimizer.zero_grad() # clears the gradients of all optimized tensors.
             loss.backward() 
@@ -275,6 +275,8 @@ class function():
             loss = 1.0e+08
             print("### The value was out of boundary. ###")
             print("Output: {:.3f}".format(loss))
+            rsl = {"lr": self.hyperparameters.lr, "epoch": 1, "TrainAcc": 0.0 , "TrainLoss": 1.0e+08 , "TestAcc": 0. , "TestLoss": 1.0e+08 , "Time": str(datetime.datetime.today()) }
+            record_log(rsl, self.model, self.num)
             print("")
 
         renew_evaluation(self.var_names[-1], self.hp_dict, loss, self.model, num = self.num)

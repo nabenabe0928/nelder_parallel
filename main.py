@@ -3,6 +3,7 @@ import subprocess as sp
 import sys
 import math
 import os
+import time
 
 class pycolor:
     BLACK = '\033[30m'
@@ -20,6 +21,7 @@ class pycolor:
     REVERCE = '\033[07m'    
 
 if __name__ == "__main__":
+    sp.call('export SINGULARITY_BINDPATH="~/research/test"', shell = True)
 
     try:
         argp = ArgPar()
@@ -111,14 +113,14 @@ if __name__ == "__main__":
         os.mkdir("storage/{}/{}".format(model, num))    
 
     init_sh = \
-        ["#!/usr/bin/bash", \
+        ["#!/bin/bash", \
         "USER=$(whoami)", \
-        "CWD=dirname $0", \
+        "CWD=$(dirname $0)", \
         "\n", \
-        "rm storage/{}/storage.csv".format(model), \
-        "echo $USER:~$CWD$ rm storage/{}/storage.csv".format(model), \
-        "rm simplex/{}/simplex.csv".format(model), \
-        "echo $USER:~$CWD$ rm simplex/{}/simplex.csv".format(model), \
+        "rm storage/{}/{}/storage.csv".format(model, num), \
+        "echo $USER:~$CWD$ rm storage/{}/{}/storage.csv".format(model, num), \
+        "rm simplex/{}/{}/simplex.csv".format(model, num), \
+        "echo $USER:~$CWD$ rm simplex/{}/{}/simplex.csv".format(model, num), \
         "rm operation/{}/{}/operations.csv".format(model, num), \
         "echo $USER:~$CWD$ rm operation/{}/{}/operations.csv".format(model, num), \
         "rm evaluation/{}/{}/evaluation.csv".format(model, num), \
@@ -130,9 +132,9 @@ if __name__ == "__main__":
         ]
 
     main_sh = \
-        ["#!/usr/bin/bash", \
+        ["#!/bin/bash", \
         "USER=$(whoami)", \
-        "CWD=dirname $0", \
+        "CWD=$(dirname $0)", \
         "\n", \
         "echo $USER:~$CWD$ python nelder.py -model {} -num {} -round {}".format(model, num, int(round)), \
         "python nelder.py -model {} -num {} -round {}".format(model, num, int(round)), \
@@ -140,8 +142,8 @@ if __name__ == "__main__":
         "echo $USER:~$CWD$ python env.py -model {} -num {} -round {} -cuda {}".format(model, num, int(round), 0), \
         "python env.py -model {} -num {} -round {} -cuda {}".format(model, num, int(round), 0), \
         "echo",  \
-        "echo $USER:~$CWD$ sh run.sh", \
-        "sh run.sh", \
+        "echo $USER:~$CWD$ ./run.sh", \
+        "./run.sh", \
         "echo",  \
         ]
     
@@ -152,8 +154,8 @@ if __name__ == "__main__":
     if not rerun:
         files = [
                     ["operation/{}/{}/".format(model, num) + f for f in os.listdir("operation/{}/{}".format(model, num))],\
-                    ["simplex/{}/{}/".format(model, num) + f for f in os.listdir("simplex/{}".format(model))],\
-                    ["storage/{}/{}/".format(model, num) + f for f in os.listdir("storage/{}".format(model))],\
+                    ["simplex/{}/{}/".format(model, num) + f for f in os.listdir("simplex/{}/{}".format(model, num))],\
+                    ["storage/{}/{}/".format(model, num) + f for f in os.listdir("storage/{}/{}".format(model, num))],\
                     ["log/{}/{}/".format(model, num) + f for f in os.listdir("log/{}/{}".format(model, num))],\
                     ["exec_screen/{}/{}/".format(model, num) + f for f in os.listdir("exec_screen/{}/{}".format(model, num))],\
                     ["evaluation/{}/{}/".format(model, num) + f for f in os.listdir("evaluation/{}/{}".format(model, num))] ]
@@ -193,44 +195,49 @@ if __name__ == "__main__":
                 print("Permission Denied.")
                 sys.exit()
 
-        print("")
-        print("#########################")
-        print("# WILL REMOVE THE FILES #")
-        print("#########################")
-        print("")
+            print("")
+            print("#########################")
+            print("# WILL REMOVE THE FILES #")
+            print("#########################")
+            print("")
 
-        sp.call("sh init.sh", shell = True)
+            sp.call("chmod +x init.sh", shell = True)
+            sp.call("./init.sh", shell = True)
+            
+            print("")
+            print("#########################")
+            print("### REMOVED THE FILES ###")
+            print("#########################")
+            print("")
+    else:
+        with open("init.sh", "w") as f:
+            f.writelines(script)
 
-        print("")
-        print("#########################")
-        print("### REMOVED THE FILES ###")
-        print("#########################")
-        print("")
-
-        print("")
-        print("#########################")
-        print("##### RENEW THE ENV #####")
-        print("#########################")
-        print("")
+    print("")
+    print("#########################")
+    print("##### RENEW THE ENV #####")
+    print("#########################")
+    print("")
 
         
-        if not os.path.isfile("storage/{}/{}/storage.csv".format(model, num)):
-            with open("storage/{}/{}/storage.csv".format(model, num), "w", newline = "") as f:
-                pass
+    if not os.path.isfile("storage/{}/{}/storage.csv".format(model, num)):
+        with open("storage/{}/{}/storage.csv".format(model, num), "w", newline = "") as f:
+            pass
         
-        if not os.path.isfile("simplex/{}/{}/simplex.csv".format(model, num)):
-            with open("simplex/{}/{}/simplex.csv".format(model, num), "w", newline = "") as f:
-                pass
+    if not os.path.isfile("simplex/{}/{}/simplex.csv".format(model, num)):
+        with open("simplex/{}/{}/simplex.csv".format(model, num), "w", newline = "") as f:
+            pass
 
-        if not os.path.isfile("operation/{}/{}/operations.csv".format(model, num)):
-            with open("operation/{}/{}/operations.csv".format(model, num), "w", newline = "") as f:
-                pass
+    if not os.path.isfile("operation/{}/{}/operations.csv".format(model, num)):
+        with open("operation/{}/{}/operations.csv".format(model, num), "w", newline = "") as f:
+            pass
 
     for t in range(itr):
+        n_log = len(os.listdir("exec_screen/{}/{}".format(model, num)))
         print("")
         print("")
         print("#########################")
-        print("####### evals {:0>3} #######".format(t + 1))
+        print("####### evals {:0>3} #######".format(t + 1 + n_log))
         print("#########################")
         print("")
         print("Will use the cuda visible device {}".format(cudas[(t + 1) % n_cudas]))
@@ -246,5 +253,6 @@ if __name__ == "__main__":
 
         with open("main.sh", "w") as f:
             f.writelines(script)
-
-        sp.call("sh main.sh > exec_screen/{}/{}/exec{}.log".format(model, num, t), shell = True)
+        
+        sp.call("chmod +x main.sh", shell = True)
+        sp.call("./main.sh > exec_screen/{}/{}/exec{}.log".format(model, num, n_log), shell = True)
