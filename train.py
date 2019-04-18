@@ -81,14 +81,6 @@ def convert_value_by_dist(value, dist):
         v = value
     return v
 
-def re_storage(hp_dict, dists, model, num):
-    
-    with open("storage/{}/{}/storage.csv".format(model, num), "a", newline = "") as f:
-        writer = csv.DictWriter(f, fieldnames = hp_dict.keys(), delimiter = ",", quotechar = '"')
-
-        save_row = {var_name: convert_value_by_dist(x, dist) for (var_name, x), dist in zip(hp_dict.items(), dists)}
-        writer.writerow(save_row)
-
 def get_arguments(var_names, type_dict, bounds, defaults, is_round = True):
     argp = ArgPar()
     n_vars = len(var_names) - 1
@@ -130,13 +122,6 @@ def accuracy(y, target):
     return acc
 
 def record_log(rsl, model, num):
-    if not os.path.isdir("log"):
-        os.mkdir("log")
-    if not os.path.isdir("log/{}".format(model)):
-        os.mkdir("log/{}".format(model))
-    if not os.path.isdir("log/{}/{}".format(model, num)):
-        os.mkdir("log/{}/{}".format(model, num))
-    
     n_evals = len( os.listdir(os.getcwd() + "/log/{}/{}".format(model, num) ) ) - 1
 
     with open("log/{}/{}/eval{}.csv".format(model, num, n_evals + 1), "w", newline = "") as f:
@@ -263,7 +248,6 @@ class function():
             print("FAILED to EVALUATE THE HYPERPARAMETERS, BECAUSE OF ERROR BELOW")
             print(exc)
             print("TRY to EVALUATE AGAIN")
-            re_storage(self.hp_dict, self.dists, model, num)
 
     def f(self):
         if not self.out_of_bound:
@@ -275,7 +259,7 @@ class function():
             loss = 1.0e+08
             print("### The value was out of boundary. ###")
             print("Output: {:.3f}".format(loss))
-            rsl = {"lr": self.hyperparameters.lr, "epoch": 1, "TrainAcc": 0.0 , "TrainLoss": 1.0e+08 , "TestAcc": 0. , "TestLoss": 1.0e+08 , "Time": str(datetime.datetime.today()) }
+            rsl = [{"lr": self.hyperparameters.lr, "epoch": 1, "TrainAcc": 0.0 , "TrainLoss": 1.0e+08 , "TestAcc": 0. , "TestLoss": 1.0e+08 , "Time": str(datetime.datetime.today()) }]
             record_log(rsl, self.model, self.num)
             print("")
 
