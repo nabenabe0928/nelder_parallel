@@ -36,7 +36,7 @@ def get_hyperparameters(hp_parser):
 class BasicBlock(nn.Module):
     def __init__(self, in_ch, out_ch, stride = 1, drop_rate = 0.2, kernel_size = 3):
         super(BasicBlock, self).__init__()
-        self.in_is_out = (in_ch == out_ch)
+        self.in_is_out = (in_ch == out_ch and stride == 1)
         self.drop_rate = drop_rate
         
         self.shortcut = nn.Sequential() if self.in_is_out else nn.Conv2d(in_ch, out_ch, 1, padding = 0, stride = stride, bias = True)
