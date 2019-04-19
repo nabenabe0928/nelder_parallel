@@ -210,6 +210,11 @@ if __name__ == "__main__":
             print("#########################")
             print("")
     else:
+        n_log = len(os.listdir("log/{}/{}".format(model, num)))
+        n_ex = os.listdir("exec_screen/{}/{}".format(model, num))
+        for del_idx in range(n_log, n_ex):
+            sp.call("rm {}".format("exec_screen/{}/{}/exec{}.log".format(model, num, del_idx)), shell = True)
+        
         with open("init.sh", "w") as f:
             f.writelines(script)
 
