@@ -58,6 +58,6 @@ class CNN(nn.Module):
 
         h = h.view(h.size(0), -1)
         h = self.full_conn1(h)
-        h = F.dropout2d(h, p = self.drop_rate)
+        h = F.dropout2d(h, p = self.drop_rate, training = self.training)
         h = self.full_conn2(h)
         return F.log_softmax(h, dim = 1)
