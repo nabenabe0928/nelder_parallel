@@ -42,7 +42,7 @@ if __name__ == "__main__":
         sys.argv[9]
 
     except Exception:
-        print("")
+        print("") 
         print("###### ERROR ######")
         models = [file.split(".")[0] for file in os.listdir( "model" )]
         
@@ -82,6 +82,11 @@ if __name__ == "__main__":
         print("")
         sys.exit()
     
+    if not os.path.isdir("shell/{}".format(model)):
+        os.mkdir("shell/{}".format(model))
+    if not os.path.isdir("shell/{}/{}".format(model, num)):
+        os.mkdir("shell/{}/{}".format(model, num))
+
     if not os.path.isdir("evaluation/{}".format(model)):
         os.mkdir("evaluation/{}".format(model))
     if not os.path.isdir("evaluation/{}/{}".format(model, num)):
@@ -115,35 +120,34 @@ if __name__ == "__main__":
     init_sh = \
         ["#!/bin/bash", \
         "USER=$(whoami)", \
-        "CWD=$(dirname $0)", \
         "\n", \
         "rm storage/{}/{}/storage.csv".format(model, num), \
-        "echo $USER:~$CWD$ rm storage/{}/{}/storage.csv".format(model, num), \
+        "echo $USER:~$PWD$ rm storage/{}/{}/storage.csv".format(model, num), \
         "rm simplex/{}/{}/simplex.csv".format(model, num), \
-        "echo $USER:~$CWD$ rm simplex/{}/{}/simplex.csv".format(model, num), \
+        "echo $USER:~$PWD$ rm simplex/{}/{}/simplex.csv".format(model, num), \
         "rm operation/{}/{}/operations.csv".format(model, num), \
-        "echo $USER:~$CWD$ rm operation/{}/{}/operations.csv".format(model, num), \
+        "echo $USER:~$PWD$ rm operation/{}/{}/operations.csv".format(model, num), \
         "rm evaluation/{}/{}/evaluation.csv".format(model, num), \
-        "echo $USER:~$CWD$ rm evaluation/{}/{}/evaluation.csv".format(model, num), \
+        "echo $USER:~$PWD$ rm evaluation/{}/{}/evaluation.csv".format(model, num), \
         "rm log/{}/{}/*.csv".format(model, num), \
-        "echo $USER:~$CWD$ rm log/{}/{}/*.csv".format(model,num), \
+        "echo $USER:~$PWD$ rm log/{}/{}/*.csv".format(model,num), \
         "rm exec_screen/{}/{}/*.log".format(model, num), \
-        "echo $USER:~$CWD$ rm exec_screen/{}/{}/*.log".format(model,num), \
+        "echo $USER:~$PWD$ rm exec_screen/{}/{}/*.log".format(model,num), \
         ]
 
     main_sh = \
         ["#!/bin/bash", \
         "USER=$(whoami)", \
-        "CWD=$(dirname $0)", \
         "\n", \
-        "echo $USER:~$CWD$ python nelder.py -model {} -num {} -round {}".format(model, num, int(round)), \
+        "echo $USER:~$PWD$ python nelder.py -model {} -num {} -round {}".format(model, num, int(round)), \
         "python nelder.py -model {} -num {} -round {}".format(model, num, int(round)), \
         "echo",  \
-        "echo $USER:~$CWD$ python env.py -model {} -num {} -round {} -cuda {}".format(model, num, int(round), 0), \
+        "echo $USER:~$PWD$ python env.py -model {} -num {} -round {} -cuda {}".format(model, num, int(round), 0), \
         "python env.py -model {} -num {} -round {} -cuda {}".format(model, num, int(round), 0), \
         "echo",  \
-        "echo $USER:~$CWD$ ./run.sh", \
-        "./run.sh", \
+        "echo $USER:~$PWD$ ./shell/{}/{}/run.sh".format(model, num), \
+        "chmod +x shell/{}/{}/run.sh".format(model, num), \
+        "./shell/{}/{}/run.sh".format(model, num), \
         "echo",  \
         ]
     
@@ -189,7 +193,7 @@ if __name__ == "__main__":
                 answer = input("Is it okay? [y or n] : ")
         
             if answer == "y":
-                with open("init.sh", "w") as f:
+                with open("shell/{}/{}/init.sh".format(model, num), "w") as f:
                     f.writelines(script)
             else:
                 print("Permission Denied.")
@@ -201,8 +205,8 @@ if __name__ == "__main__":
             print("#########################")
             print("")
 
-            sp.call("chmod +x init.sh", shell = True)
-            sp.call("./init.sh", shell = True)
+            sp.call("chmod +x shell/{}/{}/init.sh".format(model, num), shell = True)
+            sp.call("./shell/{}/{}/init.sh".format(model, num), shell = True)
             
             print("")
             print("#########################")
@@ -214,8 +218,8 @@ if __name__ == "__main__":
         n_ex = len(os.listdir("exec_screen/{}/{}".format(model, num)))
         for del_idx in range(n_log, n_ex):
             sp.call("rm {}".format("exec_screen/{}/{}/exec{}.log".format(model, num, del_idx)), shell = True)
-        
-        with open("init.sh", "w") as f:
+       
+        with open("shell/{}/{}/init.sh".format(model, num), "w") as f:
             f.writelines(script)
 
     print("")
@@ -256,8 +260,8 @@ if __name__ == "__main__":
         for line in main_sh:
             script += line + "\n"
 
-        with open("main.sh", "w") as f:
+        with open("shell/{}/{}/main.sh".format(model, num), "w") as f:
             f.writelines(script)
         
-        sp.call("chmod +x main.sh", shell = True)
-        sp.call("./main.sh > exec_screen/{}/{}/exec{}.log".format(model, num, n_log), shell = True)
+        sp.call("chmod +x shell/{}/{}/main.sh".format(model, num), shell = True)
+        sp.call("./shell/{0}/{1}/main.sh > exec_screen/{0}/{1}/exec{2}.log".format(model, num, n_log), shell = True)

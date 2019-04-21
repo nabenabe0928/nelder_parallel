@@ -37,7 +37,7 @@ def convert_value_by_dist(value, dist):
     return v
 
 def generate_shell(target, model, num, is_round, cuda):
-    scripts = ["#!/bin/bash","USER=$(whoami)","CWD=$(dirname $0)", ]
+    scripts = ["#!/bin/bash","USER=$(whoami)"]
     enter = "\n"
     first_script = ""
     second_script = ""
@@ -54,12 +54,10 @@ def generate_shell(target, model, num, is_round, cuda):
         v = convert_value_by_dist(value, dist)
         second_script += "-{} {} ".format(var_name, v)
 
-    script = first_script + "echo $USER:~$CWD$ {} \n".format(second_script) + second_script
+    script = first_script + "echo $USER:~$PWD$ {} \n".format(second_script) + second_script
 
-    with open("run.sh", "w") as f:
+    with open("shell/{}/{}/run.sh".format(model, num), "w") as f:
         f.writelines(script)
-    sp.call("ls", shell = True)
-    sp.call("chmod +x run.sh", shell = True)
 
 def main(model, num, is_round, cuda):
     load_storage(model, num, is_round, cuda)
