@@ -1,0 +1,19 @@
+shuhei:~.$ python nelder.py -model CNN -num 2 -round 0
+Will get the positions by Nelder-Mead Method.
+Saving the position data as shown below...
+  batch_size       lr               momentum         weight_decay     ch1              ch2              ch3              ch4              drop_rate      
+  6.922            -0.734           0.814            -4.275           4.519            4.984            3.733            6.202          
+
+
+shuhei:~.$ python env.py -model CNN -num 2 -round 0 -cuda 0
+Collecting Environment Variables and Putting in Shell Scripts.
+
+shuhei:~.$ ./run.sh
+shuhei:~.$ CUDA_VISIBLE_DEVICES=0 python train.py -model CNN -num 2 -round 0 -batch_size 121 -lr 0.18449391889854386 -momentum 0.8144191032898355 -weight_decay 5.310936619711023e-05 -ch1 22 -ch2 31 -ch3 13 -ch4 73 -drop_rate -0.03383153931020266
+Start Training
+
+
+### The value was out of boundary. ###
+Output: 100000000.000
+
+
