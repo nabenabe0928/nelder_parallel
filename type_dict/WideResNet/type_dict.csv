@@ -1,5 +1,5 @@
 var_name;type;default;bound;dist
-batch_size;int;128;[32,512];log2
+batch_size;int;128;[64,256];log2
 lr;float;1.0e-1;[1.0e-4,1.0];log10
 momentum;float;0.9;[0.8,1.0];uniform
 weight_decay;float;5.0e-4;[5.0e-6,5.0e-2];log10
