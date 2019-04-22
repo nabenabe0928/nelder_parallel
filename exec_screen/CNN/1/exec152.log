@@ -1,0 +1,19 @@
+shuhei:~.$ python nelder.py -model CNN -num 1 -round 0
+Will collect a position from the storage.
+
+
+shuhei:~.$ python env.py -model CNN -num 1 -round 0 -cuda 0
+Collecting Environment Variables and Putting in Shell Scripts.
+
+shuhei:~.$ ./run.sh
+shuhei:~.$ CUDA_VISIBLE_DEVICES=0 python train.py -model CNN -num 1 -round 0 -batch_size 203 -lr 0.013657302539129054 -momentum 0.9499800681254288 -weight_decay 2.9629277054103536e-05 -ch1 40 -ch2 37 -ch3 98 -ch4 46 -drop_rate 0.22199078219597335
+Start Training
+
+
+Files already downloaded and verified
+  lr                      epoch                   TrainAcc                TrainLoss               TestAcc                 TestLoss                Time                  
+  0.01366                 1                       0.13018                 3.74349                 0.22070                 3.19652                 2019-04-19 14:01:11.163120  
+  0.01366                 2                       0.23722                 3.07339                 0.30830                 2.72409                 2019-04-19 14:01:15.693772  
+  0.01366                 3                       0.28524                 2.83252                 0.32510                 2.70190                 2019-04-19 14:01:20.389764  
+  0.01366                 4                       0.31598                 2.68087                 0.36830                 2.42193                 2019-04-19 14:01:24.943055  
+
