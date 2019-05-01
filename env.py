@@ -30,7 +30,12 @@ def convert_value_by_dist(value, dist):
     vtype, vdist = dist[0], dist[1]
     if "log" in vdist:
         base = float(vdist.split("log")[-1])
-        v = vtype(base ** float(value))
+        
+        if vtype == float:
+            v = float(base ** float(value))
+        elif vtype == int:
+            v = round(base ** float(value))
+    
     else:
         v = value
 
