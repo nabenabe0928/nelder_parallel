@@ -147,9 +147,18 @@ def load_evaluation(var_names, type_dict, dists, model, num = 0):
 def convert_value_by_dist(value, dist, vtype):
     if "log" in dist:
         base = float(dist.split("log")[-1])
-        v = vtype(math.log(float(value), base))
+        
+        if vtype == float:
+            v = float(math.log(float(value), base))
+        elif vtype == int:
+            v = round(math.log(float(value), base))
+           
     else:
-        v = vtype(value)
+        if vtype == float:
+            v = float(value)
+        elif vtype == int:
+            v = round(value)
+
     return v
 
 def latin_hypercube_sampling(bounds, n_points, type_dict):
