@@ -157,7 +157,7 @@ def convert_value_by_dist(value, dist, vtype):
         if vtype == float:
             v = float(value)
         elif vtype == int:
-            v = round(value)
+            v = round(float(value))
 
     return v
 
