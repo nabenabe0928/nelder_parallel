@@ -11,7 +11,8 @@ def get_data(batch_size):
     normalize = transforms.Normalize(mean=[0.5071, 0.4867, 0.4408],
                                           std=[0.2675, 0.2565, 0.2761])
     transform_train = transforms.Compose([
-                                transforms.RandomCrop(32, padding = 4),
+                                transforms.Pad(4, padding_mode = "reflect"),
+                                transforms.RandomCrop(32),
                                 transforms.RandomHorizontalFlip(),
                                 transforms.ToTensor(), 
                                 normalize])
