@@ -82,15 +82,15 @@ class WideResNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-                m.bias.data.zero_()
+                nn.init.constant_(m.bias, 0.0)
+                nn.init.kaiming_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
+                nn.init.constant_(m.bias, 0.0)
+                nn.init.uniform_(m.weight, 0.0, 1.0)
             elif isinstance(m, nn.Linear):
-                m.bias.data.zero_()
-
+                nn.init.constant_(m.bias, 0.0)
+                nn.init.kaiming_normal_(m.weight)
+                
     def forward(self, x):
         h = self.conv1(x)
         h = self.conv2(h)
