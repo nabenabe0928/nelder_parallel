@@ -34,7 +34,7 @@ def get_hyperparameters(hp_parser):
     
 
 class BasicBlock(nn.Module):
-    def __init__(self, in_ch, out_ch, stride = 1, drop_rate = 0.2, kernel_size = 3):
+    def __init__(self, in_ch, out_ch, stride = 1, drop_rate = 0.3, kernel_size = 3):
         super(BasicBlock, self).__init__()
         self.in_is_out = (in_ch == out_ch and stride == 1)
         self.drop_rate = drop_rate
