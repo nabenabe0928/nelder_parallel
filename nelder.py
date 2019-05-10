@@ -101,28 +101,30 @@ def load_simplex(var_names, type_dict, n_points, model, num):
         
         return xs, ys
 
-def convert_attr_by_dist(vtype, bound, dist):
+def convert_attr_by_dist(vtype, bound, dist, default):
     if "log" in dist:
         base = float(dist.split("log")[-1])
         bound = [ math.log(bound[0], base), math.log(bound[1], base) ]
         vtype = float
-    return vtype, bound
+        default = math.log(default, base)
+    return vtype, bound, default
 
 def load_var_features(model):
     with open("type_dict/{}/type_dict.csv".format(model), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ";", quotechar = '"')
         
-        var_names, type_dict, bounds, dists = [],[],[],[]
+        var_names, type_dict, bounds, dists, defaults = [],[],[],[]
 
         for row in reader:
-            vtype, bound = convert_attr_by_dist(eval(row["type"]), eval(row["bound"]), row["dist"]) 
+            vtype, bound, default = convert_attr_by_dist(eval(row["type"]), eval(row["bound"]), row["dist"], eval(row["default"])) 
             
             var_names.append(row["var_name"])
             type_dict.append(vtype)
+            defaults.append(default)
             bounds.append(bound)
             dists.append(row["dist"])
 
-        return var_names, type_dict, bounds, dists
+        return var_names, type_dict, bounds, dists, defaults
 
 def load_evaluation(var_names, type_dict, dists, model, num = 0):   
     if not os.path.isfile("evaluation/{}/{}/evaluation.csv".format(model, num)):
@@ -161,12 +163,14 @@ def convert_value_by_dist(value, dist, vtype):
 
     return v
 
-def latin_hypercube_sampling(bounds, n_points, type_dict):
+def latin_hypercube_sampling(bounds, n_points, type_dict, defaults):
     n_dim = len(bounds)
     rnd_grid = np.array([np.random.permutation(list(range(1, n_points + 1))) for _ in range(n_dim)])
     
     xs = [[bi[0] + (rnd_grid[i][s] - random.random()) * (bi[1] - bi[0]) / n_points for i, bi in enumerate(bounds)
         ] for s in range(n_points)]
+    
+    xs[0] = defaults[:]
     
     return xs
 
@@ -177,7 +181,7 @@ class nelder():
         self.model = model
         self.is_round = is_round
 
-        self.var_names, self.type_dict, self.bounds, self.dists = load_var_features(self.model)
+        self.var_names, self.type_dict, self.bounds, self.dists, self.defaults = load_var_features(self.model)
         self.n_points = self.get_dim()
         self.xs, self.ys = load_simplex(self.var_names, self.type_dict, self.n_points, self.model, self.num)
         self.prior_xs, self.prior_ys = load_evaluation(self.var_names, self.type_dict, self.dists, self.model, num = self.num)
@@ -187,7 +191,7 @@ class nelder():
         self.initilize = False
 
         if len(self.operations) == 0:
-            self.xs = latin_hypercube_sampling(self.bounds, self.n_points, self.type_dict)
+            self.xs = latin_hypercube_sampling(self.bounds, self.n_points, self.type_dict, self.defaults)
             self.ys = np.array([1.0e+08 for _ in range(self.n_points)])
             self.initilize = True
                     
