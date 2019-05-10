@@ -113,7 +113,7 @@ def load_var_features(model):
     with open("type_dict/{}/type_dict.csv".format(model), "r", newline = "") as f:
         reader = csv.DictReader(f, delimiter = ";", quotechar = '"')
         
-        var_names, type_dict, bounds, dists, defaults = [],[],[],[]
+        var_names, type_dict, bounds, dists, defaults = [],[],[],[],[]
 
         for row in reader:
             vtype, bound, default = convert_attr_by_dist(eval(row["type"]), eval(row["bound"]), row["dist"], eval(row["default"])) 
