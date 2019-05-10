@@ -46,11 +46,11 @@ class BasicBlock(nn.Module):
         self.c2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding = 1, bias = True)
 
     def forward(self, x):
-        h = F.relu(self.bn1(x))
+        h = F.relu(self.bn1(x), inplace = True)
         h = self.c1(h)
         #h = F.dropout2d(h, p = self.drop_rate, training = self.training)
         h = F.dropout(h, p = self.drop_rate, training = self.training)
-        h = F.relu(self.bn2(h))
+        h = F.relu(self.bn2(h), inplace = True)
         h = self.c2(h)
 
         return h + self.shortcut(x)
@@ -70,8 +70,7 @@ class WideResNet(nn.Module):
         self.n_blocks = [self.hyperparameters.n_blocks1, self.hyperparameters.n_blocks2, self.hyperparameters.n_blocks3]
         self.in_chs = [ 16, 16 * self.hyperparameters.width_coef1, 32 * self.hyperparameters.width_coef2, 64 * self.hyperparameters.width_coef3 ]
         self.epochs = 200
-        lr_step = [0.3, 0.6, 0.8]
-        self.lr_step = [int(self.epochs * ls) for ls in lr_step]
+        self.lr_step = [60, 120, 160]
         
         self.conv1 = nn.Conv2d(3, self.in_chs[0], 3, padding = 1, bias = True)
         self.conv2 = self._add_groups(self.n_blocks[0], self.in_chs[0], self.in_chs[1], self.hyperparameters.drop_rates1)
@@ -86,6 +85,8 @@ class WideResNet(nn.Module):
                 nn.init.kaiming_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.bias, 0.0)
+                nn.init.constant_(m.running_mean, 0.0)
+                nn.init.constant_(m.running_var, 1.0)
                 nn.init.uniform_(m.weight, 0.0, 1.0)
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0.0)
@@ -96,7 +97,7 @@ class WideResNet(nn.Module):
         h = self.conv2(h)
         h = self.conv3(h)
         h = self.conv4(h)
-        h = F.relu(self.bn(h))
+        h = F.relu(self.bn(h), inplace = True)
         h = F.avg_pool2d(h, 8)
         h = h.view(-1, self.in_chs[3])
         h = self.full_conn(h)
