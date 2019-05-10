@@ -39,11 +39,11 @@ class BasicBlock(nn.Module):
         self.in_is_out = (in_ch == out_ch and stride == 1)
         self.drop_rate = drop_rate
         
-        self.shortcut = nn.Sequential() if self.in_is_out else nn.Conv2d(in_ch, out_ch, 1, padding = 0, stride = stride, bias = True)
+        self.shortcut = nn.Sequential() if self.in_is_out else nn.Conv2d(in_ch, out_ch, 1, padding = 0, stride = stride, bias = False)
         self.bn1 = nn.BatchNorm2d(in_ch)        
-        self.c1 = nn.Conv2d(in_ch, out_ch, kernel_size, stride = stride, padding = 1, bias = True)
+        self.c1 = nn.Conv2d(in_ch, out_ch, kernel_size, stride = stride, padding = 1, bias = False)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.c2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding = 1, bias = True)
+        self.c2 = nn.Conv2d(out_ch, out_ch, kernel_size, padding = 1, bias = False)
 
     def forward(self, x):
         h = F.relu(self.bn1(x), inplace = True)
@@ -72,7 +72,7 @@ class WideResNet(nn.Module):
         self.epochs = 200
         self.lr_step = [60, 120, 160]
         
-        self.conv1 = nn.Conv2d(3, self.in_chs[0], 3, padding = 1, bias = True)
+        self.conv1 = nn.Conv2d(3, self.in_chs[0], 3, padding = 1, bias = False)
         self.conv2 = self._add_groups(self.n_blocks[0], self.in_chs[0], self.in_chs[1], self.hyperparameters.drop_rates1)
         self.conv3 = self._add_groups(self.n_blocks[1], self.in_chs[1], self.in_chs[2], self.hyperparameters.drop_rates2, stride = 2)
         self.conv4 = self._add_groups(self.n_blocks[2], self.in_chs[2], self.in_chs[3], self.hyperparameters.drop_rates3, stride = 2)
@@ -81,16 +81,12 @@ class WideResNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.constant_(m.bias, 0.0)
-                nn.init.kaiming_normal_(m.weight, mode = 'fan_out', nonlinearity = 'relu')
+                nn.init.kaiming_normal_(m.weight, mode = 'fan_out')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.bias, 0.0)
-                nn.init.constant_(m.running_mean, 0.0)
-                nn.init.constant_(m.running_var, 1.0)
-                nn.init.uniform_(m.weight, 0.0, 1.0)
+                nn.init.constant_(m.weight, 1.0)
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0.0)
-                nn.init.kaiming_normal_(m.weight)
                 
     def forward(self, x):
         h = self.conv1(x)
