@@ -8,8 +8,13 @@ import numpy as np
 
 def get_data(batch_size):
 
+    """
     normalize = transforms.Normalize(mean=[0.5071, 0.4867, 0.4408],
                                           std=[0.2675, 0.2565, 0.2761])
+    """
+    
+    normalize = transforms.Normalize(mean=[125.3 / 255.0, 123.0 / 255.0, 113.9 / 255.0],
+                                          std=[63.0 / 255.0, 62.1 / 255.0, 66.7 / 255.0])
     transform_train = transforms.Compose([
                                 transforms.Pad(4, padding_mode = "reflect"),
                                 transforms.RandomCrop(32),
