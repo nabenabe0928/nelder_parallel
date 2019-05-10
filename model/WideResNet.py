@@ -48,9 +48,8 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         h = F.relu(self.bn1(x), inplace = True)
         h = self.c1(h)
-        #h = F.dropout2d(h, p = self.drop_rate, training = self.training)
-        h = F.dropout(h, p = self.drop_rate, training = self.training)
         h = F.relu(self.bn2(h), inplace = True)
+        h = F.dropout(h, p = self.drop_rate, training = self.training)
         h = self.c2(h)
 
         return h + self.shortcut(x)
