@@ -82,7 +82,7 @@ class WideResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.constant_(m.bias, 0.0)
-                nn.init.kaiming_normal_(m.weight)
+                nn.init.kaiming_normal_(m.weight, mode = 'fan_out', nonlinearity = 'relu')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.bias, 0.0)
                 nn.init.constant_(m.running_mean, 0.0)
