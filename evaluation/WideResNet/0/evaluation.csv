@@ -1,1 +1,0 @@
-batch_size,lr,momentum,weight_decay,width_coef1,width_coef2,width_coef3,n_blocks1,n_blocks2,n_blocks3,drop_rates1,drop_rates2,drop_rates3,lr_decay,loss

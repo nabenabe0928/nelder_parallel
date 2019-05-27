@@ -1,5 +1,0 @@
-#!/usr/bin/bash
-USER=$(whoami)
-CWD=dirname $0
-echo $USER:~$CWD$ CUDA_VISIBLE_DEVICES=1 python train.py -model WideResNet -num 0 -round 0 -batch_size 6.79844914625508 -lr -1.057114986154963 -momentum 0.9839965958183633 -weight_decay -4.712565856777411 -width_coef1 2.2753192675953153 -width_coef2 2.392520869632733 -width_coef3 2.5916459403803924 -n_blocks1 4 -n_blocks2 4 -n_blocks3 4 -drop_rates1 0.0984718057324306 -drop_rates2 0.22425032645339593 -drop_rates3 0.20763684644182356 -lr_decay -0.21837057915654978  
-CUDA_VISIBLE_DEVICES=1 python train.py -model WideResNet -num 0 -round 0 -batch_size 6.79844914625508 -lr -1.057114986154963 -momentum 0.9839965958183633 -weight_decay -4.712565856777411 -width_coef1 2.2753192675953153 -width_coef2 2.392520869632733 -width_coef3 2.5916459403803924 -n_blocks1 4 -n_blocks2 4 -n_blocks3 4 -drop_rates1 0.0984718057324306 -drop_rates2 0.22425032645339593 -drop_rates3 0.20763684644182356 -lr_decay -0.21837057915654978 
